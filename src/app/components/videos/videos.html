@@ -1,0 +1,173 @@
+<div class="min-h-screen bg-gray-50 pt-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Videos</h1>
+        <p class="mt-1 text-sm text-gray-600">
+          View your previously generated videos or create a new one.
+        </p>
+      </div>
+
+      <button
+        (click)="onCreateNew()"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Create new video
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading()" class="flex items-center justify-center py-20">
+      <div class="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
+      <p class="ml-3 text-sm text-gray-600">Loading videos...</p>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!loading() && total() === 0" class="flex flex-col items-center justify-center py-20 text-center">
+      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600 mb-4">
+        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-gray-900">No videos yet</h2>
+      <p class="mt-1 text-sm text-gray-600 max-w-sm">
+        You have not generated any videos. Start by creating your first personalized video.
+      </p>
+      <button
+        (click)="onCreateNew()"
+        class="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+      >
+        Create new video
+      </button>
+    </div>
+
+    <!-- Videos grid -->
+    <div *ngIf="!loading() && total() > 0">
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          *ngFor="let video of pagedVideos()"
+          (click)="openVideo(video)"
+          class="group flex cursor-pointer flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 transition hover:-translate-y-1 hover:shadow-md"
+        >
+          <!-- Thumbnail -->
+          <div class="relative aspect-video w-full overflow-hidden bg-gray-200">
+            <img
+              [src]="video.thumbnailUrl"
+              [alt]="video.title"
+              class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+
+            <!-- Duration -->
+            <div class="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-0.5 text-xs font-medium text-white">
+              {{ video.duration }}
+            </div>
+
+            <!-- Status -->
+            <div
+              class="absolute top-2 left-2 rounded-full px-2.5 py-0.5 text-xs font-medium"
+              [ngClass]="statusClasses(video.status)"
+            >
+              <span *ngIf="video.status === 'completed'">Completed</span>
+              <span *ngIf="video.status === 'processing'">Processing</span>
+              <span *ngIf="video.status === 'failed'">Failed</span>
+            </div>
+
+            <!-- Play icon -->
+            <div
+              class="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100"
+            >
+              <div
+                class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-blue-600 shadow-md"
+              >
+                <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M4.5 3.5A1.5 1.5 0 013.5 5v10a1.5 1.5 0 002.3 1.24l8-5a1.5 1.5 0 000-2.48l-8-5A1.5 1.5 0 014.5 3.5z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="flex flex-1 flex-col px-4 py-3">
+            <h3 class="line-clamp-2 text-sm font-semibold text-gray-900">
+              {{ video.title }}
+            </h3>
+            <p class="mt-1 line-clamp-2 text-xs text-gray-600">
+              {{ video.description }}
+            </p>
+
+            <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
+              <span class="inline-flex items-center gap-1">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7a2 2 0 002 2z" />
+                </svg>
+                {{ video.createdAt | date: 'MMM d, y, h:mm a' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="mt-6 flex flex-col items-center justify-between gap-3 sm:flex-row">
+        <div class="text-xs text-gray-500">
+          Showing
+          <span class="font-semibold text-gray-700">
+            {{ (page() - 1) * pageSize() + 1 }}
+          </span>
+          –
+          <span class="font-semibold text-gray-700">
+            {{
+              page() * pageSize() > total()
+                ? total()
+                : page() * pageSize()
+            }}
+          </span>
+          of
+          <span class="font-semibold text-gray-700">{{ total() }}</span>
+          videos
+        </div>
+
+        <div class="inline-flex items-center gap-1">
+          <button
+            (click)="prevPage()"
+            [disabled]="page() === 1"
+            class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          <ng-container *ngFor="let p of [].constructor(totalPages()); let i = index">
+            <button
+              (click)="setPage(i + 1)"
+              class="inline-flex h-8 min-w-[2rem] items-center justify-center rounded-md px-2 text-xs font-medium"
+              [ngClass]="
+                page() === i + 1
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              "
+            >
+              {{ i + 1 }}
+            </button>
+          </ng-container>
+
+          <button
+            (click)="nextPage()"
+            [disabled]="page() === totalPages()"
+            class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
