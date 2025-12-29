@@ -4,11 +4,13 @@ import { Home } from './components/home/home';
 import { ForgotPassword } from './components/forgot-password/forgot-password';
 import { UsersComponent } from './components/users/users';
 import { Videos } from './components/videos/videos';
+import { Profile } from './components/profile/profile';
+import { authGuard } from './guards/auth-guard';
 
 export const routes: Routes = [
     {
         path: '',
-        redirectTo: 'login',    
+        redirectTo: 'login',
         pathMatch: 'full'
     },
     {
@@ -17,7 +19,8 @@ export const routes: Routes = [
     },
     {
         path: 'dashboard',
-        component: Home
+        component: Home,
+        canActivate: [authGuard]
     },
     {
         path: 'forgot-password',
@@ -25,10 +28,17 @@ export const routes: Routes = [
     },
     {
         path: 'users',
-        component: UsersComponent
+        component: UsersComponent,
+        canActivate: [authGuard]
     },
     {
         path: 'videos',
-        component: Videos
+        component: Videos,
+        canActivate: [authGuard]
+    },
+    {
+        path: 'profile',
+        component: Profile,
+        canActivate: [authGuard]
     }
 ];

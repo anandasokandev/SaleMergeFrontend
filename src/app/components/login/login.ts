@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { Authentication } from '../../services/authentication';
 import { ToastService } from '../../services/toast';
+import { UserService } from '../../services/users';
 
 @Component({
   selector: 'app-login',
@@ -14,8 +15,17 @@ import { ToastService } from '../../services/toast';
 })
 export class Login {
   loginForm = new FormGroup({
-    email: new FormControl<string>('', [Validators.required, Validators.email]),
-    password: new FormControl<string>('', [Validators.required, Validators.minLength(6)]),
+    email: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
+    password: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+      ],
+    }),
   });
 
   loading = false;
@@ -24,8 +34,10 @@ export class Login {
   constructor(
     private router: Router,
     private loginApi: Authentication,
-    private toast: ToastService
-  ) {}
+    private toast: ToastService,
+    private userService: UserService
+  ) { }
+
 
   submit() {
     if (this.loginForm.invalid) {
@@ -45,24 +57,89 @@ export class Login {
 
     this.loginApi.login({ email, password }).subscribe({
       next: (response: any) => {
-      
-        this.loading = false;
-        if (response.status == false) {
-          this.toast.error(response.message);
+
+        if (!response?.success) {
+          this.loading = false;
+          const msg = response?.message || 'Login failed';
+
+          if (msg.toLowerCase().includes('disabled')) {
+            this.toast.error('Account is disabled. Check your mail', 'Account Disabled');
+          } else {
+            this.toast.error(msg);
+          }
           return;
         }
-        // Save token if needed
-        if (response.token) {
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('userId', response.user.id);
+
+        const { token, user } = response.data;
+
+        if (!token || !user) {
+          this.loading = false;
+          this.toast.error('Invalid server response');
+          return;
         }
 
-        // Navigate after successful login
-        this.router.navigate(['/dashboard']);
+        // Store tentatively to allow verification call
+        localStorage.setItem('token', token);
+
+        // Verify Status via User Service (in case login payload misses is_active)
+        this.userService.getUserById(user.id).subscribe({
+          next: (userRes: any) => {
+            let fullUser = null;
+            if (userRes.message && userRes.message.id) fullUser = userRes.message;
+            else if (userRes.data) fullUser = userRes.data;
+            else fullUser = user;
+
+            // Robust check
+            const isActive = fullUser.is_active;
+            const active = fullUser.active;
+
+            const isExplicitlyDisabled =
+              (isActive === 0 || isActive === false || isActive === '0' || isActive === 'false') ||
+              (active === 0 || active === false || active === '0' || active === 'false');
+
+            if (isExplicitlyDisabled) {
+              this.loading = false;
+              localStorage.clear();
+              this.toast.error('Account is disabled. Check your mail', 'Account Disabled');
+              return;
+            }
+
+            // If valid
+            localStorage.setItem('userId', user.id);
+            localStorage.setItem('email', user.email);
+            localStorage.setItem('role', user.role);
+            this.loading = false;
+            this.router.navigate(['/dashboard']);
+          },
+          error: (err) => {
+            // If verification fails, fallback to strict check of login object
+            this.loading = false;
+
+            const isActive = user.is_active;
+            const isExplicitlyDisabled = (isActive === 0 || isActive === false || isActive === '0' || isActive === 'false');
+
+            if (isExplicitlyDisabled) {
+              localStorage.clear();
+              this.toast.error('Account is disabled. Check your mail', 'Account Disabled');
+              return;
+            }
+
+            localStorage.setItem('userId', user.id);
+            localStorage.setItem('email', user.email);
+            localStorage.setItem('role', user.role);
+            this.router.navigate(['/dashboard']);
+          }
+        });
       },
       error: (err: any) => {
         this.loading = false;
-        this.toast.error('Invalid credentials');
+        const errorMsg = err?.error?.message || err?.message || 'Invalid credentials';
+
+        if (errorMsg.toLowerCase().includes('disabled')) {
+          this.toast.error('Account is disabled. Check your mail', 'Account Disabled');
+        } else {
+          this.toast.error(errorMsg);
+        }
       },
     });
   }

@@ -26,21 +26,20 @@ export class ForgotPassword implements OnDestroy {
   resetForm = new FormGroup({
     email: new FormControl<string>('', [Validators.required, Validators.email]),
     otp: new FormControl<string>('', [Validators.required, Validators.pattern(/^\d{6}$/)]),
-    newPassword: new FormControl<string>('', [Validators.required, Validators.minLength(6)]),
+    newPassword: new FormControl<string>('', [
+      Validators.required,
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    ]),
   });
 
   // Loading state for form submission
   loading = false;
   otpSent = false;
-  otpVerified = false;
-  isVerifying = false;
-  resetToken: string | null = null;
 
   // Timer properties
   countdown = 30;
   canResendOtp = true;
   private timerSubscription?: Subscription;
-  private otpSubscription?: Subscription;
 
   // Constructor
   constructor(
@@ -52,21 +51,11 @@ export class ForgotPassword implements OnDestroy {
     // Disable OTP and password fields initially
     this.resetForm.get('otp')?.disable();
     this.resetForm.get('newPassword')?.disable();
-
-    // Auto-verify OTP when 6 digits are entered
-    this.otpSubscription = this.resetForm.get('otp')?.valueChanges.subscribe((value) => {
-      if (value && value.length === 6 && !this.otpVerified && !this.isVerifying) {
-        this.verifyOtp();
-      }
-    });
   }
 
   // OnDestroy lifecycle hook
   ngOnDestroy(): void {
     this.stopTimer();
-    if (this.otpSubscription) {
-      this.otpSubscription.unsubscribe();
-    }
   }
 
   // Send OTP
@@ -96,13 +85,13 @@ export class ForgotPassword implements OnDestroy {
         }
 
         this.otpSent = true;
-        this.otpVerified = false;
         this.toastService.success(res?.message || 'OTP sent to your email.', 'Success');
         console.log('OTP sent:', res);
 
-        // Enable OTP field and disable email
+        // Enable OTP and Password fields, disable email
         this.resetForm.get('otp')?.enable();
         this.resetForm.get('otp')?.reset();
+        this.resetForm.get('newPassword')?.enable();
         this.resetForm.get('email')?.disable();
 
         this.startResendTimer();
@@ -147,78 +136,23 @@ export class ForgotPassword implements OnDestroy {
     }
   }
 
-  // Verify OTP
-  verifyOtp() {
-    if (this.isVerifying || this.otpVerified) {
+  // Reset password (Final Step)
+  onResetPassword() {
+    if (this.resetForm.invalid) {
+      this.toastService.error('Please fill all fields correctly.', 'Error');
       return;
     }
+
+    this.loading = true;
 
     const email = this.resetForm.get('email')?.value;
     const otp = this.resetForm.get('otp')?.value;
+    const newPassword = this.resetForm.get('newPassword')?.value;
 
-    if (!email || !otp) {
-      this.toastService.error('Email and OTP are required.', 'Error');
-      return;
-    }
+    const payload = { email, otp, newPassword };
 
-    this.isVerifying = true;
-    this.loading = true;
-
-    // Verify OTP API - Use the verify-otp-reset endpoint
-    this.loginApi.verifyOtp({ email, otp }).subscribe({
-      next: (res) => {
-        this.loading = false;
-        this.isVerifying = false;
-
-        if (res.status === true) {
-          this.otpVerified = true;
-          this.resetToken = res.resetToken; // Store the reset token
-          this.toastService.success(res?.message || 'OTP verified successfully.', 'Success');
-
-          this.stopTimer();
-          
-          // Disable OTP field and enable password field
-          this.resetForm.get('otp')?.disable();
-          this.resetForm.get('newPassword')?.enable();
-          
-          // Trigger change detection
-          this.cdr.markForCheck();
-
-          console.log('OTP verified, reset token received:', this.resetToken);
-        } else {
-          this.otpVerified = false;
-          this.toastService.error(res?.message || 'Invalid OTP. Please try again.', 'Error');
-          console.error('OTP verification failed:', res);
-        }
-      },
-      error: (err) => {
-        this.loading = false;
-        this.isVerifying = false;
-        this.otpVerified = false;
-        this.toastService.error(err?.error?.message || 'Invalid OTP. Please try again.', 'Error');
-        console.error('verifyOtp error:', err);
-      },
-    });
-  }
-
-  // Reset password
-  onResetPassword() {
-    if (!this.otpVerified) {
-      this.toastService.error('Please verify OTP first.', 'Error');
-      return;
-    }
-
-    if (!this.resetToken) {
-      this.toastService.error('Reset token is missing. Please verify OTP again.', 'Error');
-      return;
-    }
-
-    
-    this.loading = true;
-
-    const email = this.resetForm.get('email')?.value;
-    // Call reset password API with email and resetToken
-    this.loginApi.resetPassword({ email, resetToken: this.resetToken }).subscribe({
+    // Call reset password API
+    this.loginApi.resetPassword(payload).subscribe({
       next: (res) => {
         this.loading = false;
 
@@ -228,7 +162,7 @@ export class ForgotPassword implements OnDestroy {
         }
 
         this.toastService.success(
-          res?.message || 'Password reset successfully. New password sent to your email.',
+          res?.message || 'Password has been successfully updated.',
           'Success'
         );
         console.log('Password reset:', res);
@@ -247,7 +181,7 @@ export class ForgotPassword implements OnDestroy {
 
   // Check if submit button is disabled
   isSubmitDisabled(): boolean {
-    return !this.otpVerified || this.loading || false;
+    return !this.otpSent || this.resetForm.invalid || this.loading || false;
   }
 
   // Check if send OTP button is disabled
@@ -260,6 +194,6 @@ export class ForgotPassword implements OnDestroy {
 
   // Helper to check if password field should be shown
   showPasswordField(): boolean {
-    return this.otpVerified;
+    return this.otpSent;
   }
 }

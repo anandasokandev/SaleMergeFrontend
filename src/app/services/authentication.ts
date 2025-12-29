@@ -1,28 +1,31 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class Authentication {
-  private readonly API_URL = 'http://localhost:3000';
+  private readonly API_URL = environment.apiUrl;
 
-  constructor(private http: HttpClient){}
+  constructor(private http: HttpClient) { }
 
-  login(user: any) : Observable<any>{
-    return this.http.post(`${this.API_URL}/api/auth/login`,user);
+  login(user: any): Observable<any> {
+    return this.http.post(`${this.API_URL}/auth/login`, user);
   }
 
-  sendOtp(email: any) : Observable<any>{
-    return this.http.post(`${this.API_URL}/api/auth/request-otp`,{email: email});
+  // Send OTP (User specified endpoint)
+  sendOtp(email: any): Observable<any> {
+    return this.http.post(`${this.API_URL}/auth/forgot-password`, { email: email });
   }
 
-  verifyOtp(data: any) : Observable<any>{
-    return this.http.post(`${this.API_URL}/api/auth/verify-otp-reset`,data);
+  // Final Reset (Payload with OTP)
+  resetPassword(resetData: any): Observable<any> {
+    return this.http.post(`${this.API_URL}/auth/reset-password`, resetData);
   }
 
-  resetPassword(resetData: any) : Observable<any>{
-    return this.http.post(`${this.API_URL}/api/auth/reset-password`,resetData);
+  notifyDisabledLogin(email: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/auth/notify-disabled`, { email });
   }
 }
