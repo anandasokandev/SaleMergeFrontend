@@ -29,7 +29,6 @@ export class Login {
   });
 
   loading = false;
-  errorMsg = '';
 
   constructor(
     private router: Router,
@@ -41,19 +40,18 @@ export class Login {
 
   submit() {
     if (this.loginForm.invalid) {
-      this.errorMsg = 'Please enter valid credentials';
+      this.toast.error('Please enter valid credentials');
       return;
     }
 
     const { email, password } = this.loginForm.value;
 
     if (!email || !password) {
-      this.errorMsg = 'Email and password are required';
+      this.toast.error('Email and password are required');
       return;
     }
 
     this.loading = true;
-    this.errorMsg = '';
 
     this.loginApi.login({ email, password }).subscribe({
       next: (response: any) => {

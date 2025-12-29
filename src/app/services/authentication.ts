@@ -24,8 +24,4 @@ export class Authentication {
   resetPassword(resetData: any): Observable<any> {
     return this.http.post(`${this.API_URL}/auth/reset-password`, resetData);
   }
-
-  notifyDisabledLogin(email: string): Observable<any> {
-    return this.http.post(`${this.API_URL}/auth/notify-disabled`, { email });
-  }
 }

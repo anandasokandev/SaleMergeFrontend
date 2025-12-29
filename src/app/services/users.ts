@@ -101,26 +101,19 @@ export class UserService {
   }
 
   /**
-   * Change user password
-   */
-  changePassword(data: any): Observable<ApiResponse> {
-    // Assuming a separate endpoint or using a patch on the user profile
-    // Based on typical patterns, let's assume a dedicated endpoint or reuse auth structure
-    // Since there's no explicit Profile service, we'll add it here or in Authentication. 
-    // Given the requirement is "change password by entering old and new", this is usually an Auth function.
-    // However, if it's "updating profile", it might be here. 
-    // Let's use the Authentication service for password changes as it relates to credentials.
-    // But for now, I will add a method here that calls the backend.
-    return this.http.post<ApiResponse>(`${environment.apiUrl}/auth/change-password`, data);
-  }
-  /**
-   * Update User Profile (Self)
-   */
-  /**
    * Update User Profile (Self)
    * PATCH /api/users/me
    */
   updateProfile(data: any): Observable<ApiResponse> {
     return this.http.patch<ApiResponse>(`${environment.apiUrl}/users/me`, data);
   }
+
+  /**
+   * Get User Profile (Self)
+   * GET /api/users/me
+   */
+  getProfile(): Observable<ApiResponse<User>> {
+    return this.http.get<ApiResponse<User>>(`${environment.apiUrl}/users/me`);
+  }
 }
+

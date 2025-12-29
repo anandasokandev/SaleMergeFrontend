@@ -46,24 +46,23 @@ export class Profile implements OnInit {
   }
 
   loadUserProfile() {
-    // Load from localStorage or fetch fresh from API
-    const id = localStorage.getItem('userId');
-    const email = localStorage.getItem('email');
-    const role = localStorage.getItem('role');
+    this.userService.getProfile().subscribe({
+      next: (res: any) => {
+        let userData: any = null;
+        if (res.message && res.message.id) userData = res.message;
+        else if (res.data) userData = res.data;
 
-    if (id) {
-      this.userService.getUserById(Number(id)).subscribe({
-        next: (res: any) => {
-          let userData: any = null;
-          if (res.message && res.message.id) userData = res.message;
-          else if (res.data) userData = res.data;
+        if (userData) {
+          this.setUserData(userData);
+        }
+      },
+      error: () => {
+        // Fallback to local storage if API fails
+        const id = localStorage.getItem('userId');
+        const email = localStorage.getItem('email');
+        const role = localStorage.getItem('role');
 
-          if (userData) {
-            this.setUserData(userData);
-          }
-        },
-        error: () => {
-          // Fallback to local storage
+        if (id) {
           this.setUserData({
             name: 'User',
             email: email || '',
@@ -71,8 +70,8 @@ export class Profile implements OnInit {
             id: Number(id)
           });
         }
-      });
-    }
+      }
+    });
   }
 
   setUserData(data: any) {

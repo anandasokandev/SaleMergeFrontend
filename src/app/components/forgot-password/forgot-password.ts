@@ -85,8 +85,8 @@ export class ForgotPassword implements OnDestroy {
         }
 
         this.otpSent = true;
-        this.toastService.success(res?.message || 'OTP sent to your email.', 'Success');
-        console.log('OTP sent:', res);
+        this.toastService.success('OTP sent successfully. Please check your mail.', 'Success');
+
 
         // Enable OTP and Password fields, disable email
         this.resetForm.get('otp')?.enable();
@@ -165,7 +165,7 @@ export class ForgotPassword implements OnDestroy {
           res?.message || 'Password has been successfully updated.',
           'Success'
         );
-        console.log('Password reset:', res);
+
 
         setTimeout(() => {
           this.router.navigate(['/login']);

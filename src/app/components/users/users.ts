@@ -67,7 +67,6 @@ export class UsersComponent implements OnInit {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (response: any) => {
-          console.log('Processed API Response:', response);
 
           // Check if data is in 'message' object (as indicated by user logs)
           if (response && response.message && Array.isArray(response.message.users)) {

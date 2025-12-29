@@ -16,13 +16,14 @@ export class App {
   showNavbar = signal<boolean>(true);
 
   constructor(private router: Router) {
-        this.router.events.pipe(
-            filter(e => e instanceof NavigationEnd)
-        ).subscribe(event => this.checkRoute(event));
-    }
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd)
+    ).subscribe(event => this.checkRoute(event));
+  }
 
-    checkRoute(event: any) {
-    const hiddenRoutes = ['/login', '/forgot-password',''];
-    this.showNavbar.set(!hiddenRoutes.includes(event.url)); // Use .set() method
+  checkRoute(event: any) {
+    const url = event.url.split('?')[0]; // Ignore query parameters
+    const hiddenRoutes = ['/login', '/forgot-password', '/signup', '/'];
+    this.showNavbar.set(!hiddenRoutes.includes(url));
   }
 }
