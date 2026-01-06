@@ -43,8 +43,8 @@ export class Home implements OnInit {
     { id: 3, name: 'Ananth', duration: '1:30', price: null },
     { id: 4, name: 'Any Room', duration: '0:45', price: null },
     { id: 5, name: 'Restoration', duration: '2:15', price: null },
-    { id: 6, name: 'Coverage for Non-Medical', duration: '2:00', price: null },
-    { id: 7, name: 'Health Checkup', duration: '3:30', price: null },
+    // { id: 6, name: 'Coverage for Non-Medical', duration: '2:00', price: null },
+    // { id: 7, name: 'Health Checkup', duration: '3:30', price: null },
   ];
 
   constructor(
@@ -58,8 +58,8 @@ export class Home implements OnInit {
     this.initForm();
   }
 
-  planOptions = ['Silver Plan', 'Gold Plan', 'Platinum Plan', 'Family Floater', 'Senior Citizen'];
-  coverTypeOptions = ['Individual', 'Floater', 'Group'];
+  planOptions = ['Sarvah Uttam'];
+  coverTypeOptions = ['Family', 'Individual', 'Multi Individual'];
 
   initForm() {
     this.quoteForm = this.fb.group({
@@ -170,6 +170,7 @@ export class Home implements OnInit {
         plan_name: formValue.planName,
         sum_insured: this.formatCurrency(formValue.sumInsured),
         cover_type: formValue.coverType,
+        base_premium: this.formatCurrency(formValue.baseVideoPrice),
         addons: formattedAddons,
         total_premium: this.formatCurrency(this.getTotalAmount())
       }
