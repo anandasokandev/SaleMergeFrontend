@@ -1,4 +1,4 @@
 export const environment = {
     production: false,
-    apiUrl: 'https://salemerge.in/api'
+    apiUrl: 'https://api.salemerge.in/api'
 };
